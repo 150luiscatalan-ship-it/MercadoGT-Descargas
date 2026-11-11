@@ -1,0 +1,52 @@
+name: Publicar APK firmado Mercado GT 242
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-apk242.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar APK compilado y certificado
+        env:
+          SOURCE_URL: 'https://sdmntpreastus3.oaiusercontent.com/files/00000000-a2b8-8212-9456-e8d52c56ac60/raw?se=2026-11-11T03%3A22%3A16Z&sp=r&sv=2026-06-06&sr=b&scid=055339af-2217-5b1b-b6a7-a6217cfba570&skoid=c953efd6-2ae8-41b4-a6d6-34b1475ac07c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-11T00%3A41%3A35Z&ske=2026-11-12T00%3A41%3A35Z&sks=b&skv=2026-06-06&sig=p033J2SwmSHQp3TPneuqDHvf%2Bl8YP4FTu%2BhG5GHitXU%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT242_artifact.zip
+          unzip -t /tmp/MercadoGT242_artifact.zip >/dev/null
+          unzip -q /tmp/MercadoGT242_artifact.zip -d dist
+          test -s dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk
+          test -s dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.sha256
+          test -s dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.cert.sha256
+          cd dist
+          sed -i 's|dist/||g' MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.sha256
+          sha256sum -c MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.sha256
+          test "$(cat MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
+          unzip -t MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk >/dev/null
+
+      - name: Publicar APK en descarga directa de GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=mercadogt-242
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Mercado GT 242 — Descargar APK Android" \
+              --notes "APK piloto de Mercado GT 242, firmado con la misma clave que Mercado GT 230. Vender y Dar fiado usan sus propios carritos y flujos; temporales e historiales separados, cobro normal sin mezclar crédito. Los 35 perfiles de negocios siguen retirados. Respalda tus datos antes de actualizar. APK piloto: falta prueba en dispositivo." \
+              --prerelease \
+              dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk \
+              dist/MercadoGT_242_VENTAS_FIADOS_SEPARADOS.apk.sha256
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
