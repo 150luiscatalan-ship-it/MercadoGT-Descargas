@@ -28,7 +28,7 @@ jobs:
           cd dist
           sed -i 's|dist/||g' MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
           sha256sum -c MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
-          test "$(cat MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2441ae489c633453d"
+          test "$(cat MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
           unzip -t MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk >/dev/null
 
       - name: Publicar APK en descarga directa de GitHub
