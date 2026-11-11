@@ -22,14 +22,14 @@ jobs:
           curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT241_artifact.zip
           unzip -t /tmp/MercadoGT241_artifact.zip >/dev/null
           unzip -q /tmp/MercadoGT241_artifact.zip -d dist
-          test -s dist/MercadoGT_241_TABS_CLIENTES.apk
-          test -s dist/MercadoGT_241_TABS_CLIENTES.apk.sha256
-          test -s dist/MercadoGT_241_TABS_CLIENTES.apk.cert.sha256
+          test -s dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk
+          test -s dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk.sha256
+          test -s dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk.cert.sha256
           cd dist
-          sed -i 's|dist/||g' MercadoGT_241_TABS_CLIENTES.apk.sha256
-          sha256sum -c MercadoGT_241_TABS_CLIENTES.apk.sha256
-          test "$(cat MercadoGT_241_TABS_CLIENTES.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
-          unzip -t MercadoGT_241_TABS_CLIENTES.apk >/dev/null
+          sed -i 's|dist/||g' MercadoGT_241_INTERFAZ_PRODUCTOS.apk.sha256
+          sha256sum -c MercadoGT_241_INTERFAZ_PRODUCTOS.apk.sha256
+          test "$(cat MercadoGT_241_INTERFAZ_PRODUCTOS.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
+          unzip -t MercadoGT_241_INTERFAZ_PRODUCTOS.apk >/dev/null
 
       - name: Publicar APK en descarga directa de GitHub
         env:
@@ -38,7 +38,7 @@ jobs:
           set -euo pipefail
           tag=mercadogt-241
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/MercadoGT_241_TABS_CLIENTES.apk dist/MercadoGT_241_TABS_CLIENTES.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$tag" dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$tag" \
               --repo "$GITHUB_REPOSITORY" \
@@ -46,7 +46,7 @@ jobs:
               --title "Mercado GT 241 — Descargar APK Android" \
               --notes "APK piloto de Mercado GT 241, firmado con la misma clave que Mercado GT 230. Se eliminaron los perfiles de 35 negocios del menú, sin borrar historiales. Respalda tus datos antes de actualizar." \
               --prerelease \
-              dist/MercadoGT_241_TABS_CLIENTES.apk \
-              dist/MercadoGT_241_TABS_CLIENTES.apk.sha256
+              dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk \
+              dist/MercadoGT_241_INTERFAZ_PRODUCTOS.apk.sha256
           fi
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
