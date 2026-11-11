@@ -1,0 +1,52 @@
+name: Publicar APK firmado Mercado GT 243
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-apk243.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar APK compilado y certificado
+        env:
+          SOURCE_URL: 'https://sdmntpreastus3.oaiusercontent.com/files/00000000-5f64-8212-a0d3-d2749e91d6d5/raw?se=2026-11-11T03%3A37%3A17Z&sp=r&sv=2026-06-06&sr=b&scid=9ec0f036-6844-5f10-87d5-823e7f22d7e8&skoid=c953efd6-2ae8-41b4-a6d6-34b1475ac07c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-11T00%3A53%3A46Z&ske=2026-11-12T00%3A53%3A46Z&sks=b&skv=2026-06-06&sig=/5L%2BR0x3mdPtGAjKFw4cht5XMvQHGjDuE%2BUtpToAjEI%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT243_artifact.zip
+          unzip -t /tmp/MercadoGT243_artifact.zip >/dev/null
+          unzip -q /tmp/MercadoGT243_artifact.zip -d dist
+          test -s dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk
+          test -s dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.sha256
+          test -s dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.cert.sha256
+          cd dist
+          sed -i 's|dist/||g' MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.sha256
+          sha256sum -c MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.sha256
+          test "$(cat MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
+          unzip -t MercadoGT_243_MENU_PESTANAS_COMPLETO.apk >/dev/null
+
+      - name: Publicar APK en descarga directa de GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=mercadogt-243
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Mercado GT 243 — Descargar APK Android" \
+              --notes "APK piloto de Mercado GT 243, firmado con la misma clave que Mercado GT 230. Navegación con pestañas independientes para las 72 opciones del menú de Ventas, Compras, Inventario, Finanzas y Mantenimiento; las pestañas se pueden seleccionar y cerrar por separado. Se conserva la separación de Vender y Dar fiado. Los 35 perfiles de negocios siguen retirados. Respalda tus datos antes de actualizar. APK piloto: falta prueba en dispositivo." \
+              --prerelease \
+              dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk \
+              dist/MercadoGT_243_MENU_PESTANAS_COMPLETO.apk.sha256
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
