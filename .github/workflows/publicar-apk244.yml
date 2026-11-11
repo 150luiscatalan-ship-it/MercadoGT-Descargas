@@ -1,0 +1,52 @@
+name: Publicar APK firmado Mercado GT 244
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-apk244.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar APK compilado y certificado
+        env:
+          SOURCE_URL: 'https://sdmntprsouthcentralus.oaiusercontent.com/files/00000000-3a50-81f7-a5d6-1b3eb21abb15/raw?se=2026-11-11T03%3A51%3A28Z&sp=r&sv=2026-06-06&sr=b&scid=9b523da6-7005-561f-93c8-c152c37cf8f9&skoid=c953efd6-2ae8-41b4-a6d6-34b1475ac07c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-11T01%3A40%3A58Z&ske=2026-11-12T01%3A40%3A58Z&sks=b&skv=2026-06-06&sig=Qp6m2xVfMpvRqEtA44iVn4SP66P7yuqb/QIE%2BorLwbU%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT244_artifact.zip
+          unzip -t /tmp/MercadoGT244_artifact.zip >/dev/null
+          unzip -q /tmp/MercadoGT244_artifact.zip -d dist
+          test -s dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk
+          test -s dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
+          test -s dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.cert.sha256
+          cd dist
+          sed -i 's|dist/||g' MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
+          sha256sum -c MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
+          test "$(cat MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2441ae489c633453d"
+          unzip -t MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk >/dev/null
+
+      - name: Publicar APK en descarga directa de GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=mercadogt-244
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Mercado GT 244 — Descargar APK Android" \
+              --notes "APK piloto de Mercado GT 244, firmado con la misma clave que Mercado GT 230. Nueva pantalla de asignar impresoras por documento, usuario y copias; vista previa segura; Windows mediante servidor local y Android USB ESC/POS si está disponible. Se conservan las pestañas y separación de Vender/Dar fiado. Prueba piloto; impresión física pendiente. Los 35 perfiles de negocios siguen retirados. Respalda tus datos antes de actualizar. APK piloto: falta prueba en dispositivo." \
+              --prerelease \
+              dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk \
+              dist/MercadoGT_244_IMPRESORAS_DOCUMENTOS.apk.sha256
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
