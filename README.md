@@ -1,3 +1,15 @@
+# Mercado GT — Descargas oficiales
+
+## 🖥️ [⬇️ DESCARGAR MERCADO GT 246 PARA WINDOWS (PROGRAMA .EXE)](https://github.com/150luiscatalan-ship-it/MercadoGT-Descargas/releases/download/mercadogt-pc-246/MercadoGT_246_WINDOWS_DIRECTO.zip)
+
+**Windows 10/11:** descarga el ZIP, descomprímelo y abre la carpeta `MercadoGT` → `MercadoGT.exe`. El programa abre una ventana propia sin Chrome ni PowerShell. Requiere Microsoft Edge WebView2 Runtime.
+
+**Importante:** los productos, ventas e inventario guardados en Chrome no se copian automáticamente al programa nuevo. Haz un respaldo en el sistema anterior, impórtalo en la nueva ventana y verifica sus datos **antes de eliminar o desinstalar nada**.
+
+La impresión directa usa las impresoras instaladas en Windows y su controlador. Todavía debe probarse con papel en cada impresora. El ejecutable no dispone de firma de código Windows, de modo que SmartScreen podría advertirlo. La compilación es de prueba.
+
+---
+
 # Mercado GT — Descargas para Android
 
 ## 📲 [⬇️ DESCARGAR MERCADO GT 245 (APK)](https://github.com/150luiscatalan-ship-it/MercadoGT-Descargas/releases/download/mercadogt-245/MercadoGT_245_PRODUCTOS_REFERENCIA.apk)
