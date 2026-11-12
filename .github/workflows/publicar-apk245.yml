@@ -1,0 +1,52 @@
+name: Publicar APK firmado Mercado GT 245
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-apk245.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar APK compilado y certificado
+        env:
+          SOURCE_URL: 'https://sdmntpreastus3.oaiusercontent.com/files/00000000-25cc-8212-a701-ecdef48404a6/raw?se=2026-11-12T13%3A27%3A58Z&sp=r&sv=2026-06-06&sr=b&scid=aabb7471-e874-53e1-97f2-a0b401b9111a&skoid=c953efd6-2ae8-41b4-a6d6-34b1475ac07c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-12T00%3A07%3A48Z&ske=2026-11-13T00%3A07%3A48Z&sks=b&skv=2026-06-06&sig=wYvhV/HY3NCJ/t2NLIz2HpoW63/dVcbTsnoX/5x5nNs%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT245_artifact.zip
+          unzip -t /tmp/MercadoGT245_artifact.zip >/dev/null
+          unzip -q /tmp/MercadoGT245_artifact.zip -d dist
+          test -s dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk
+          test -s dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk.sha256
+          test -s dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk.cert.sha256
+          cd dist
+          sed -i 's|dist/||g' MercadoGT_245_PRODUCTOS_REFERENCIA.apk.sha256
+          sha256sum -c MercadoGT_245_PRODUCTOS_REFERENCIA.apk.sha256
+          test "$(cat MercadoGT_245_PRODUCTOS_REFERENCIA.apk.cert.sha256)" = "abff6095a44e3428073de50b7cd1d8a6c2e3620e3bda58e2431ae489c633453d"
+          unzip -t MercadoGT_245_PRODUCTOS_REFERENCIA.apk >/dev/null
+
+      - name: Publicar APK en descarga directa de GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=mercadogt-245
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Mercado GT 245 — Descargar APK Android" \
+              --notes "APK piloto de Mercado GT 245, firmado con la misma clave que Mercado GT 230. Rediseño del módulo Productos para PC y Android basado en la referencia aprobada: Generales, Precios, Otros datos, 11 acciones superiores y menú ERP completo. Conserva productos y datos históricos, el control de impresoras 244, las pestañas y las ventas/fiados separados. APK piloto: instalación física pendiente de prueba. Los 35 perfiles de negocios siguen retirados. Respalda tus datos antes de actualizar. APK piloto: falta prueba en dispositivo." \
+              --prerelease \
+              dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk \
+              dist/MercadoGT_245_PRODUCTOS_REFERENCIA.apk.sha256
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
