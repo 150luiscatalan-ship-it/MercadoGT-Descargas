@@ -1,0 +1,44 @@
+name: Publicar programa Mercado GT 246 para Windows
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-escritorio246.yml']
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Descargar y verificar programa Windows compilado
+        env:
+          SOURCE_URL: 'https://sdmntpreastus3.oaiusercontent.com/files/00000000-5a5c-8212-96b5-ede2771c0c73/raw?se=2026-11-12T13%3A47%3A12Z&sp=r&sv=2026-06-06&sr=b&scid=51524e19-ea8e-5dde-b652-3116a0259ae8&skoid=c953efd6-2ae8-41b4-a6d6-34b1475ac07c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-11T22%3A43%3A21Z&ske=2026-11-12T22%3A43%3A21Z&sks=b&skv=2026-06-06&sig=VjuCPCBgyp2Vtnl2M12tqFwcZSuYFrAPT6K00NmiZec%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 --silent --show-error "$SOURCE_URL" -o /tmp/MercadoGT246_artifact.zip
+          unzip -t /tmp/MercadoGT246_artifact.zip >/dev/null
+          unzip -q /tmp/MercadoGT246_artifact.zip -d dist
+          test -s dist/MercadoGT_246_WINDOWS_DIRECTO.zip
+          test -s dist/MercadoGT_246_WINDOWS_DIRECTO.zip.sha256
+          cd dist
+          sha256sum -c MercadoGT_246_WINDOWS_DIRECTO.zip.sha256
+          unzip -t MercadoGT_246_WINDOWS_DIRECTO.zip >/dev/null
+          unzip -Z -1 MercadoGT_246_WINDOWS_DIRECTO.zip | grep -Fx 'MercadoGT/MercadoGT.exe'
+          unzip -Z -1 MercadoGT_246_WINDOWS_DIRECTO.zip | grep -Fx 'MercadoGT/app/index.html'
+          unzip -Z -1 MercadoGT_246_WINDOWS_DIRECTO.zip | grep -Fx 'MercadoGT/LEEME_PRIMERO.txt'
+
+      - name: Crear descarga pública directa desde GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=mercadogt-pc-246
+          notes="Mercado GT Escritorio 246 para Windows 10/11: ejecutable MercadoGT.exe con ventana propia y acceso a las impresoras instaladas en Windows. No requiere abrir Chrome ni PowerShell. Incluye la interfaz de Mercado GT 245, el módulo Productos, pestañas, ventas y fiados. Extraer ZIP antes de abrir el EXE. Requiere Microsoft Edge WebView2 Runtime. Los datos de Chrome no se migran automáticamente: respáldalos antes. El EXE no tiene certificado de firma de código Windows. La impresión real debe comprobarse en tu impresora."
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/MercadoGT_246_WINDOWS_DIRECTO.zip dist/MercadoGT_246_WINDOWS_DIRECTO.zip.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Mercado GT 246 - Programa Windows (EXE)" --notes "$notes" --prerelease dist/MercadoGT_246_WINDOWS_DIRECTO.zip dist/MercadoGT_246_WINDOWS_DIRECTO.zip.sha256
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets --jq '{url:.url,archivos:[.assets[].name]}'
